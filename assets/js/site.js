@@ -14,6 +14,38 @@
     });
   }catch(err){ console.error('nav init failed', err); }
 
+  // product galleries
+  try{
+    document.querySelectorAll('[data-product-gallery]').forEach(function(gallery){
+      var mainImage = gallery.querySelector('.product-main');
+      var counter = gallery.querySelector('.gallery-count');
+      var thumbs = Array.from(gallery.querySelectorAll('.product-thumb'));
+
+      thumbs.forEach(function(button, index){
+        button.addEventListener('click', function(){
+          if(button.classList.contains('active')) return;
+
+          mainImage.classList.add('is-switching');
+          thumbs.forEach(function(item){
+            item.classList.remove('active');
+            item.setAttribute('aria-pressed', 'false');
+          });
+          button.classList.add('active');
+          button.setAttribute('aria-pressed', 'true');
+
+          window.setTimeout(function(){
+            mainImage.src = button.dataset.src;
+            mainImage.alt = button.dataset.alt;
+            if(counter){
+              counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(thumbs.length).padStart(2, '0');
+            }
+            mainImage.classList.remove('is-switching');
+          }, 120);
+        });
+      });
+    });
+  }catch(err){ console.error('product gallery init failed', err); }
+
   // Reveal-on-scroll, implemented with direct inline styles (not classes),
   // so there is no stylesheet-cascade specificity involved at all: inline
   // style always wins, full stop. CSS already defaults everything to
