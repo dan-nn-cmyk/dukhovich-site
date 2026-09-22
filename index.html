@@ -580,12 +580,13 @@
 
   form.order-form{background:var(--panel);border-radius:var(--radius-lg);padding:34px;box-shadow:var(--shadow-1);}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
-  .form-field{display:flex;flex-direction:column;gap:8px;}
+  .form-field{display:flex;flex-direction:column;gap:8px;min-width:0;}
+  .contact-grid > *{min-width:0;}
   .form-field.full{grid-column:1 / -1;}
   .form-field label{font-family:var(--mono);font-size:10.5px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted-2);}
   .form-field input,.form-field select,.form-field textarea{
     background:var(--bg);border:1px solid var(--border);color:var(--ink);
-    padding:13px 16px;font-size:14px;font-family:inherit;border-radius:var(--radius-sm);
+    width:100%;padding:13px 16px;font-size:14px;font-family:inherit;border-radius:var(--radius-sm);
     transition:border-color .2s ease;
   }
   .form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--line-dim);}
@@ -627,7 +628,9 @@
   }
   @media (max-width:760px){
     nav.main-nav{
-      position:fixed;top:76px;left:0;right:0;bottom:0;
+      /* header's backdrop-filter makes it the containing block for fixed children,
+         so bottom:0 would clamp to the header — size from the viewport instead */
+      position:fixed;top:76px;left:0;right:0;height:calc(100vh - 76px);height:calc(100dvh - 76px);
       background:var(--bg);flex-direction:column;padding:32px 28px;gap:0;
       transform:translateX(100%);transition:transform .3s ease;
     }
@@ -650,6 +653,9 @@
     .form-row{grid-template-columns:1fr;}
     .footer-top{grid-template-columns:1fr;gap:32px;}
     section{padding:76px 0;}
+  }
+  @media (max-width:370px){
+    header .brand-text{display:none;}
   }
 </style>
 </head>
