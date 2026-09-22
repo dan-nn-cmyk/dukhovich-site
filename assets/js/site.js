@@ -146,20 +146,9 @@
     });
   }
 
-  // messenger menus and prefilled contact messages
+  // order links: open the chat directly, prefilled where the messenger supports it
   try{
     var contactForm = document.getElementById('contactForm');
-    var messengerCtas = Array.from(document.querySelectorAll('.messenger-cta'));
-
-    function closeMessengerMenus(except){
-      messengerCtas.forEach(function(cta){
-        if(cta === except) return;
-        var toggle = cta.querySelector('.messenger-toggle');
-        var menu = cta.querySelector('.messenger-menu');
-        toggle.setAttribute('aria-expanded', 'false');
-        menu.hidden = true;
-      });
-    }
 
     function formMessage(){
       var fields = {
@@ -177,54 +166,23 @@
       ].join('\n');
     }
 
-    function messengerUrl(service, message){
-      var pageUrl = window.location.href.split('#')[0];
-      if(service === 'vk'){
-        return 'https://vk.com/share.php?url=' + encodeURIComponent(pageUrl) + '&comment=' + encodeURIComponent(message);
-      }
-      if(service === 'telegram'){
-        return 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(message);
-      }
-      return 'https://wa.me/?text=' + encodeURIComponent(message + '\n' + pageUrl);
-    }
-
-    messengerCtas.forEach(function(cta){
-      var toggle = cta.querySelector('.messenger-toggle');
-      var menu = cta.querySelector('.messenger-menu');
-
-      toggle.addEventListener('click', function(){
-        var willOpen = menu.hidden;
-        closeMessengerMenus(willOpen ? cta : null);
-        menu.hidden = !willOpen;
-        toggle.setAttribute('aria-expanded', String(willOpen));
-        if(willOpen) menu.querySelector('button').focus();
-      });
-
-      menu.querySelectorAll('[data-messenger]').forEach(function(button){
-        button.addEventListener('click', function(){
-          var message = cta.dataset.message;
-          if(cta.classList.contains('form-messengers')){
-            if(!contactForm.reportValidity()) return;
-            message = formMessage();
+    document.querySelectorAll('.order-links').forEach(function(group){
+      var inForm = contactForm.contains(group);
+      group.querySelectorAll('.order-link').forEach(function(link){
+        var base = link.getAttribute('href');
+        link.addEventListener('click', function(event){
+          if(inForm && !contactForm.reportValidity()){ event.preventDefault(); return; }
+          var message = inForm ? formMessage() : group.dataset.message;
+          if(link.dataset.messenger === 'vk'){
+            // VK has no prefill link: put the text on the clipboard to paste into the chat
+            if(navigator.clipboard) navigator.clipboard.writeText(message).catch(function(){});
+          }else{
+            link.href = base + '?text=' + encodeURIComponent(message);
           }
-          var opened = window.open(messengerUrl(button.dataset.messenger, message), '_blank', 'noopener,noreferrer');
-          if(opened) opened.opener = null;
-          closeMessengerMenus();
         });
       });
     });
-
-    contactForm.addEventListener('submit', function(event){
-      event.preventDefault();
-      contactForm.querySelector('.messenger-toggle').click();
-    });
-    document.addEventListener('click', function(event){
-      if(!event.target.closest('.messenger-cta')) closeMessengerMenus();
-    });
-    document.addEventListener('keydown', function(event){
-      if(event.key === 'Escape') closeMessengerMenus();
-    });
-  }catch(err){ console.error('messenger init failed', err); }
+  }catch(err){ console.error('order links init failed', err); }
 
   // topographic contour canvas (purely decorative — must never affect the rest of the page)
   try{
