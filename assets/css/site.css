@@ -283,7 +283,7 @@
     font-family:var(--mono);font-size:10.5px;letter-spacing:0.08em;color:var(--ink);
     background:rgba(15,16,19,0.55);backdrop-filter:blur(6px);padding:6px 10px;border-radius:var(--radius-pill);
   }
-  .product-thumbs{display:grid;grid-template-columns:repeat(auto-fit,minmax(56px,1fr));gap:8px;padding:10px 0 0;}
+  .product-thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 0 0;}
   .product-thumb{
     appearance:none;border:1px solid transparent;background:var(--bg);padding:0;overflow:hidden;
     aspect-ratio:4/5;border-radius:10px;cursor:pointer;opacity:0.55;
@@ -348,6 +348,7 @@
     transition:border-color .2s ease,background .2s ease,transform .2s ease;
   }
   .lightbox-close:hover,.lightbox-nav:hover{border-color:var(--line-dim);background:var(--accent);color:var(--accent-ink);transform:scale(1.05);}
+  .lightbox-close svg,.lightbox-nav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .lightbox-close{position:absolute;right:18px;top:18px;z-index:3;}
   .lightbox-nav{justify-self:center;}
 
