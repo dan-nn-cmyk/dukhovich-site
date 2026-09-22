@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TG link test</title>
+<style>body{font:16px sans-serif;max-width:640px;margin:2em auto;padding:0 16px}input{width:100%;padding:6px;margin:4px 0 12px}code{word-break:break-all}</style>
+
+<label>username <input id="u" value="ddukhovich"></label>
+<label>text <input id="t" value="Привет. Мне нужен рюкзак"></label>
+
+<p>Как в исходном коде (сломано):<br><a id="bad"></a></p>
+<p>Исправлено:<br><a id="good"></a></p>
+
+<script>
+function render() {
+  const username = u.value, text = t.value;
+  const badLink = `https://t.me{username}?text=${encodeURIComponent(text)}`;
+  const link = `https://t.me/${username}?text=${encodeURIComponent(text)}`;
+  bad.href = bad.textContent = badLink;
+  good.href = good.textContent = link;
+}
+u.oninput = t.oninput = render;
+render();
+</script>
