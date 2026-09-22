@@ -16,33 +16,89 @@
 
   // product galleries
   try{
+    var lightbox = document.getElementById('productLightbox');
+    var lightboxImage = lightbox.querySelector('.lightbox-image');
+    var lightboxTitle = lightbox.querySelector('.lightbox-title');
+    var lightboxCount = lightbox.querySelector('.lightbox-count');
+    var lightboxState = null;
+
+    function formatCount(index, total){
+      return String(index + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    }
+
+    function renderLightbox(){
+      if(!lightboxState) return;
+      var item = lightboxState.thumbs[lightboxState.index];
+      lightboxImage.src = item.dataset.src;
+      lightboxImage.alt = item.dataset.alt;
+      lightboxTitle.textContent = lightboxState.title;
+      lightboxCount.textContent = formatCount(lightboxState.index, lightboxState.thumbs.length);
+    }
+
+    function moveLightbox(direction){
+      if(!lightboxState) return;
+      var total = lightboxState.thumbs.length;
+      lightboxState.index = (lightboxState.index + direction + total) % total;
+      lightboxState.activate(lightboxState.index, false);
+      renderLightbox();
+    }
+
     document.querySelectorAll('[data-product-gallery]').forEach(function(gallery){
       var mainImage = gallery.querySelector('.product-main');
+      var mainButton = gallery.querySelector('.product-main-button');
       var counter = gallery.querySelector('.gallery-count');
       var thumbs = Array.from(gallery.querySelectorAll('.product-thumb'));
+      var title = gallery.closest('.product-card').querySelector('.product-title').textContent;
+
+      function activate(index, animate){
+        var button = thumbs[index];
+        if(!button) return;
+        if(animate) mainImage.classList.add('is-switching');
+
+        thumbs.forEach(function(item){
+          item.classList.remove('active');
+          item.setAttribute('aria-pressed', 'false');
+        });
+        button.classList.add('active');
+        button.setAttribute('aria-pressed', 'true');
+        mainImage.src = button.dataset.src;
+        mainImage.alt = button.dataset.alt;
+        if(counter) counter.textContent = formatCount(index, thumbs.length);
+
+        window.setTimeout(function(){ mainImage.classList.remove('is-switching'); }, animate ? 140 : 0);
+        if(lightboxState && lightboxState.gallery === gallery) lightboxState.index = index;
+      }
 
       thumbs.forEach(function(button, index){
         button.addEventListener('click', function(){
-          if(button.classList.contains('active')) return;
-
-          mainImage.classList.add('is-switching');
-          thumbs.forEach(function(item){
-            item.classList.remove('active');
-            item.setAttribute('aria-pressed', 'false');
-          });
-          button.classList.add('active');
-          button.setAttribute('aria-pressed', 'true');
-
-          window.setTimeout(function(){
-            mainImage.src = button.dataset.src;
-            mainImage.alt = button.dataset.alt;
-            if(counter){
-              counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(thumbs.length).padStart(2, '0');
-            }
-            mainImage.classList.remove('is-switching');
-          }, 120);
+          if(!button.classList.contains('active')) activate(index, true);
         });
       });
+
+      mainButton.addEventListener('click', function(){
+        var activeIndex = thumbs.findIndex(function(item){ return item.classList.contains('active'); });
+        lightboxState = {
+          gallery: gallery,
+          thumbs: thumbs,
+          index: Math.max(activeIndex, 0),
+          title: title,
+          activate: activate
+        };
+        renderLightbox();
+        lightbox.showModal();
+      });
+    });
+
+    lightbox.querySelector('.lightbox-prev').addEventListener('click', function(){ moveLightbox(-1); });
+    lightbox.querySelector('.lightbox-next').addEventListener('click', function(){ moveLightbox(1); });
+    lightbox.querySelector('.lightbox-close').addEventListener('click', function(){ lightbox.close(); });
+    lightbox.addEventListener('click', function(event){
+      if(event.target === lightbox) lightbox.close();
+    });
+    document.addEventListener('keydown', function(event){
+      if(!lightbox.open) return;
+      if(event.key === 'ArrowLeft') moveLightbox(-1);
+      if(event.key === 'ArrowRight') moveLightbox(1);
     });
   }catch(err){ console.error('product gallery init failed', err); }
 
@@ -90,16 +146,85 @@
     });
   }
 
-  // fake order form submit
+  // messenger menus and prefilled contact messages
   try{
-    var orderForm = document.getElementById('orderForm');
-    var formSuccess = document.getElementById('formSuccess');
-    orderForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      formSuccess.classList.add('show');
-      orderForm.reset();
+    var contactForm = document.getElementById('contactForm');
+    var messengerCtas = Array.from(document.querySelectorAll('.messenger-cta'));
+
+    function closeMessengerMenus(except){
+      messengerCtas.forEach(function(cta){
+        if(cta === except) return;
+        var toggle = cta.querySelector('.messenger-toggle');
+        var menu = cta.querySelector('.messenger-menu');
+        toggle.setAttribute('aria-expanded', 'false');
+        menu.hidden = true;
+      });
+    }
+
+    function formMessage(){
+      var fields = {
+        name: document.getElementById('f-name').value.trim(),
+        contact: document.getElementById('f-contact').value.trim(),
+        model: document.getElementById('f-model').value,
+        message: document.getElementById('f-msg').value.trim()
+      };
+      return [
+        'Здравствуйте! Хочу связаться по поводу рюкзака.',
+        'Имя: ' + fields.name,
+        'Как ответить: ' + fields.contact,
+        'Модель: ' + fields.model,
+        'Сообщение: ' + fields.message
+      ].join('\n');
+    }
+
+    function messengerUrl(service, message){
+      var pageUrl = window.location.href.split('#')[0];
+      if(service === 'vk'){
+        return 'https://vk.com/share.php?url=' + encodeURIComponent(pageUrl) + '&comment=' + encodeURIComponent(message);
+      }
+      if(service === 'telegram'){
+        return 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(message);
+      }
+      return 'https://wa.me/?text=' + encodeURIComponent(message + '\n' + pageUrl);
+    }
+
+    messengerCtas.forEach(function(cta){
+      var toggle = cta.querySelector('.messenger-toggle');
+      var menu = cta.querySelector('.messenger-menu');
+
+      toggle.addEventListener('click', function(){
+        var willOpen = menu.hidden;
+        closeMessengerMenus(willOpen ? cta : null);
+        menu.hidden = !willOpen;
+        toggle.setAttribute('aria-expanded', String(willOpen));
+        if(willOpen) menu.querySelector('button').focus();
+      });
+
+      menu.querySelectorAll('[data-messenger]').forEach(function(button){
+        button.addEventListener('click', function(){
+          var message = cta.dataset.message;
+          if(cta.classList.contains('form-messengers')){
+            if(!contactForm.reportValidity()) return;
+            message = formMessage();
+          }
+          var opened = window.open(messengerUrl(button.dataset.messenger, message), '_blank', 'noopener,noreferrer');
+          if(opened) opened.opener = null;
+          closeMessengerMenus();
+        });
+      });
     });
-  }catch(err){ console.error('form init failed', err); }
+
+    contactForm.addEventListener('submit', function(event){
+      event.preventDefault();
+      contactForm.querySelector('.messenger-toggle').click();
+    });
+    document.addEventListener('click', function(event){
+      if(!event.target.closest('.messenger-cta')) closeMessengerMenus();
+    });
+    document.addEventListener('keydown', function(event){
+      if(event.key === 'Escape') closeMessengerMenus();
+    });
+  }catch(err){ console.error('messenger init failed', err); }
 
   // topographic contour canvas (purely decorative — must never affect the rest of the page)
   try{
